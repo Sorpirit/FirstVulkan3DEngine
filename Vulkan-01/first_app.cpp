@@ -5,8 +5,8 @@
 
 namespace sorp_v
 {
-	const std::string SorpSimpleApp::VERTEX_SHADER = "C:\\Users\\daniel.vozovikov\\Documents\\Projects\\Learning\\C++\\Dev\\Vulkan-01\\Vulkan-01\\shaders\\simple_shader.vert.spv";
-	const std::string SorpSimpleApp::FRAGMENT_SHADER = "C:\\Users\\daniel.vozovikov\\Documents\\Projects\\Learning\\C++\\Dev\\Vulkan-01\\Vulkan-01\\shaders\\simple_shader.frag.spv";
+	const std::string SorpSimpleApp::VERTEX_SHADER = "C:\\Users\\daniel.vozovikov\\Documents\\Projects\\Learning\\C++\\Dev\\Vulkan-01\\Vulkan-01\\shaders\\compiled\\simple_shader.vert.spv";
+	const std::string SorpSimpleApp::FRAGMENT_SHADER = "C:\\Users\\daniel.vozovikov\\Documents\\Projects\\Learning\\C++\\Dev\\Vulkan-01\\Vulkan-01\\shaders\\compiled\\simple_shader.frag.spv";
 
 	SorpSimpleApp::SorpSimpleApp()
 	{
