@@ -12,11 +12,14 @@ namespace sorp_v
 	{
 		createPipelineLayout();
 		createPipeline();
+		createVertexBuffer();
 		createCommanBuffers();
 	}
 
 	SorpSimpleApp::~SorpSimpleApp() 
 	{
+		vkDestroyBuffer(renderDevice.device(), vertexBuffer, nullptr);
+		vkFreeMemory(renderDevice.device(), vertexBufferMemory, nullptr);
 		vkDestroyPipelineLayout(renderDevice.device(), pipelineLayout, nullptr);
 	}
 
@@ -101,6 +104,12 @@ namespace sorp_v
 			vkCmdBeginRenderPass(commandBuffers[i], &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
 
 			sorpPipeline->bind(commandBuffers[i]);
+
+			VkBuffer vertexBuffers[] = { vertexBuffer };
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers,
+				offsets);
+
 			vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
 			vkCmdEndRenderPass(commandBuffers[i]);
@@ -124,5 +133,33 @@ namespace sorp_v
 		if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to present swap chain image!");
 		}
+	}
+
+	void SorpSimpleApp::createVertexBuffer()
+	{
+		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
+			stagingBufferMemory);
+		void* data;
+		vkMapMemory(renderDevice.device(), stagingBufferMemory, 0, bufferSize, 0,
+			&data);
+
+		memcpy(data, vertices.data(), (size_t)bufferSize);
+		vkUnmapMemory(renderDevice.device(), stagingBufferMemory);
+
+		renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer,
+			vertexBufferMemory);
+
+		renderDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+		vkDestroyBuffer(renderDevice.device(), stagingBuffer, nullptr);
+		vkFreeMemory(renderDevice.device(), stagingBufferMemory, nullptr);
 	}
 }
