@@ -20,9 +20,14 @@ namespace sorp_v {
 		static const std::string FRAGMENT_SHADER;
 
 		const std::vector<vertex> vertices = {
-			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+			{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+			{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+			{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+			{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+		};
+
+		const std::vector<uint16_t> indices = {
+			0, 1, 2, 2, 3, 0
 		};
 
 		SorpSimpleApp();
@@ -40,11 +45,15 @@ namespace sorp_v {
 		std::unique_ptr<SorpPipeline> sorpPipeline;
 		VkPipelineLayout pipelineLayout;
 		std::vector<VkCommandBuffer> commandBuffers;
+
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
+		VkBuffer indexBuffer;
+		VkDeviceMemory indexBufferMemory;
 
 		void createPipelineLayout();
 		void createPipeline();
+		void createIndexBuffer();
 		void createVertexBuffer();
 		void createCommanBuffers();
 		void drawFrame();

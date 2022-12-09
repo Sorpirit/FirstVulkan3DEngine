@@ -13,13 +13,18 @@ namespace sorp_v
 		createPipelineLayout();
 		createPipeline();
 		createVertexBuffer();
+		createIndexBuffer();
 		createCommanBuffers();
 	}
 
 	SorpSimpleApp::~SorpSimpleApp() 
 	{
+		vkDestroyBuffer(renderDevice.device(), indexBuffer, nullptr);
+		vkFreeMemory(renderDevice.device(), indexBufferMemory, nullptr);
+
 		vkDestroyBuffer(renderDevice.device(), vertexBuffer, nullptr);
 		vkFreeMemory(renderDevice.device(), vertexBufferMemory, nullptr);
+
 		vkDestroyPipelineLayout(renderDevice.device(), pipelineLayout, nullptr);
 	}
 
@@ -110,7 +115,10 @@ namespace sorp_v
 			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers,
 				offsets);
 
-			vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+			vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0,VK_INDEX_TYPE_UINT16);
+
+			vkCmdDrawIndexed(commandBuffers[i],
+				static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 			vkCmdEndRenderPass(commandBuffers[i]);
 			if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -159,6 +167,32 @@ namespace sorp_v
 
 		renderDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
+		vkDestroyBuffer(renderDevice.device(), stagingBuffer, nullptr);
+		vkFreeMemory(renderDevice.device(), stagingBufferMemory, nullptr);
+	}
+
+	void SorpSimpleApp::createIndexBuffer()
+	{
+		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
+			stagingBufferMemory);
+		void* data;
+		vkMapMemory(renderDevice.device(), stagingBufferMemory, 0, bufferSize, 0,
+			&data);
+		memcpy(data, indices.data(), (size_t)bufferSize);
+		vkUnmapMemory(renderDevice.device(), stagingBufferMemory);
+
+		renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer,
+			indexBufferMemory);
+
+		renderDevice.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 		vkDestroyBuffer(renderDevice.device(), stagingBuffer, nullptr);
 		vkFreeMemory(renderDevice.device(), stagingBufferMemory, nullptr);
 	}
