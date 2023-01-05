@@ -1,4 +1,7 @@
 #include "sorp_v_pipeline.hpp"
+
+#include "sorp_v_model.hpp"
+
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
@@ -148,15 +151,13 @@ namespace sorp_v {
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 
-		auto bindingDescription = vertex::getBindingDescription();
-		auto attributeDescriptions = vertex::getAttributeDescriptions();
+		auto bindingDescription = SorpModel::Vertex::getBindingDescriptions();
+		auto attributeDescriptions = SorpModel::Vertex::getAttributeDescriptions();
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.vertexAttributeDescriptionCount =
-			static_cast<uint32_t>(attributeDescriptions.size());
-		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-		vertexInputInfo.pVertexAttributeDescriptions =
-			attributeDescriptions.data();
+		vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescription.size());
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 		VkPipelineViewportStateCreateInfo viewportInfo{};
 		viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

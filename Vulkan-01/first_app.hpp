@@ -4,7 +4,7 @@
 #include "sorp_v_pipeline.hpp"
 #include "sorp_v_device.hpp"
 #include "sorp_v_swap_chain.hpp"
-#include "sorp_v_vertex.hpp"
+#include "sorp_v_model.hpp"
 
 #include <memory>
 #include <vector>
@@ -18,12 +18,6 @@ namespace sorp_v {
 
 		static const std::string VERTEX_SHADER;
 		static const std::string FRAGMENT_SHADER;
-
-		const std::vector<vertex> vertices = {
-			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-		};
 
 		SorpSimpleApp();
 		~SorpSimpleApp();
@@ -40,13 +34,12 @@ namespace sorp_v {
 		std::unique_ptr<SorpPipeline> sorpPipeline;
 		VkPipelineLayout pipelineLayout;
 		std::vector<VkCommandBuffer> commandBuffers;
-		VkBuffer vertexBuffer;
-		VkDeviceMemory vertexBufferMemory;
+		std::unique_ptr<SorpModel> sorpModel;
 
+		void loadModels();
 		void createPipelineLayout();
 		void createPipeline();
-		void createVertexBuffer();
-		void createCommanBuffers();
+		void createCommandBuffers();
 		void drawFrame();
 	};
 }

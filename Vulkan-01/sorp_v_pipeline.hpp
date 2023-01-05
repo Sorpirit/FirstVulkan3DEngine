@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sorp_v_device.hpp"
-#include "sorp_v_vertex.hpp"
 
 #include <string>
 #include <vector>
