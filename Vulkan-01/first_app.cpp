@@ -1,4 +1,4 @@
-#include "first_app.hpp"
+﻿#include "first_app.hpp"
 
 #include <stdexcept>
 #include <array>
@@ -11,13 +11,23 @@ namespace sorp_v
 	SorpSimpleApp::SorpSimpleApp()
 	{
 		loadModels();
+		createUniformBuffers();
+		createDescriptorSetLayout();
 		createPipelineLayout();
+		createDescriptorPool();
+		createDescriptorSets();
 		recreateSwapChain();
 		createCommandBuffers();
 	}
 
 	SorpSimpleApp::~SorpSimpleApp() 
 	{
+		for (size_t i = 0; i < uniformBuffers.size(); i++) {
+			vkDestroyBuffer(renderDevice.device(), uniformBuffers[i], nullptr);
+			vkFreeMemory(renderDevice.device(), uniformBuffersMemory[i], nullptr);
+		}
+		vkDestroyDescriptorPool(renderDevice.device(), descriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(renderDevice.device(), descriptorSetLayout, nullptr);
 		vkDestroyPipelineLayout(renderDevice.device(), pipelineLayout, nullptr);
 	}
 
@@ -48,12 +58,32 @@ namespace sorp_v
 		sorpModel = std::make_unique<SorpModel>(renderDevice, vertices, indexes);
 	}
 
+	void SorpSimpleApp::createDescriptorSetLayout()
+	{
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		uboLayoutBinding.pImmutableSamplers = nullptr;
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = 1;
+		layoutInfo.pBindings = &uboLayoutBinding;
+
+		if (vkCreateDescriptorSetLayout(renderDevice.device(), &layoutInfo, nullptr,
+			&descriptorSetLayout) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
 	void SorpSimpleApp::createPipelineLayout()
 	{
 		VkPipelineLayoutCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineInfo.setLayoutCount = 0;
-		pipelineInfo.pSetLayouts = nullptr;
+		pipelineInfo.setLayoutCount = 1;
+		pipelineInfo.pSetLayouts = &descriptorSetLayout;
 		pipelineInfo.pushConstantRangeCount = 0;
 		pipelineInfo.pPushConstantRanges = nullptr;
 
@@ -108,6 +138,7 @@ namespace sorp_v
 			throw std::runtime_error("failed to acquire swap chain image");
 		}
 
+		updateUniformBuffer(imageIndex);
 		recordCommandBuffer(imageIndex);
 		result = swapChain->submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
 
@@ -166,6 +197,9 @@ namespace sorp_v
 
 		sorpPipeline->bind(commandBuffers[imageIndex]);
 		sorpModel->bind(commandBuffers[imageIndex]);
+		vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout, 0, 1, &descriptorSets[imageIndex], 0, nullptr);
+
 		sorpModel->draw(commandBuffers[imageIndex]);
 
 		vkCmdEndRenderPass(commandBuffers[imageIndex]);
@@ -174,29 +208,92 @@ namespace sorp_v
 		}
 	}
 
-	void SorpSimpleApp::createIndexBuffer()
+	void SorpSimpleApp::createDescriptorSets()
 	{
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		std::vector<VkDescriptorSetLayout> layouts(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1, descriptorSetLayout);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+		allocInfo.pSetLayouts = layouts.data();
 
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-		renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-			stagingBufferMemory);
-		void* data;
-		vkMapMemory(renderDevice.device(), stagingBufferMemory, 0, bufferSize, 0,
-			&data);
-		memcpy(data, indices.data(), (size_t)bufferSize);
-		vkUnmapMemory(renderDevice.device(), stagingBufferMemory);
+		descriptorSets.resize(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+		if (vkAllocateDescriptorSets(renderDevice.device(), &allocInfo, descriptorSets.data()) !=
+			VK_SUCCESS) {
+			throw std::runtime_error("не вдалося виділити набори дескрипторів!");
+		}
 
-		renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer,
-			indexBufferMemory);
+		for (size_t i = 0; i < SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1; i++) {
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = uniformBuffers[i];
+			bufferInfo.offset = 0;
+			bufferInfo.range = sizeof(UniformBufferObject);
 
-		renderDevice.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-		vkDestroyBuffer(renderDevice.device(), stagingBuffer, nullptr);
-		vkFreeMemory(renderDevice.device(), stagingBufferMemory, nullptr);
+			VkWriteDescriptorSet descriptorWrite{};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet = descriptorSets[i];
+			descriptorWrite.dstBinding = 0;
+			descriptorWrite.dstArrayElement = 0;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pBufferInfo = &bufferInfo;
+			descriptorWrite.pImageInfo = nullptr;
+			descriptorWrite.pTexelBufferView = nullptr;
+			vkUpdateDescriptorSets(renderDevice.device(), 1, &descriptorWrite, 0, nullptr);
+		}
+	}
+
+	void SorpSimpleApp::createUniformBuffers()
+	{
+		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+		uniformBuffers.resize(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+		uniformBuffersMemory.resize(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+		uniformBuffersMapped.resize(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+		for (size_t i = 0; i < SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1; i++) {
+			renderDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				uniformBuffers[i], uniformBuffersMemory[i]);
+			vkMapMemory(renderDevice.device(), uniformBuffersMemory[i], 0, bufferSize, 0,
+				&uniformBuffersMapped[i]);
+		}
+	}
+
+	void SorpSimpleApp::createDescriptorPool()
+	{
+		VkDescriptorPoolSize poolSize{};
+		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSize.descriptorCount = static_cast<uint32_t>(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+
+		VkDescriptorPoolCreateInfo:VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = 1;
+		poolInfo.pPoolSizes = &poolSize;
+		poolInfo.maxSets = static_cast<uint32_t>(SorpSwapChain::MAX_FRAMES_IN_FLIGHT + 1);
+
+		if (vkCreateDescriptorPool(renderDevice.device(), &poolInfo, nullptr, &descriptorPool) !=
+			VK_SUCCESS) {
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+	}
+
+	void SorpSimpleApp::updateUniformBuffer(int imageIndex) {
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float,
+			std::chrono::seconds::period>(currentTime - startTime).count();
+
+		auto swapChainExtent = sorpWindow.getExtent();
+
+		UniformBufferObject ubo{};
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
+			glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f,
+			0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width /
+			(float)swapChainExtent.height, 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+		memcpy(uniformBuffersMapped[imageIndex], &ubo, sizeof(ubo));
 	}
 }
