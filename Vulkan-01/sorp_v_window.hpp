@@ -18,14 +18,20 @@ namespace sorp_v
 		bool shouldClose() { return glfwWindowShouldClose(window); }
 		VkExtent2D getExtent() { return { static_cast<uint32_t>(width), static_cast<uint32_t>(height) }; }
 
+		bool wasWindowResized() { return frameBufferResized; }
+		void resetWindowResizedFlag() { frameBufferResized = false; }
+
 		void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 
 	private:
 		GLFWwindow* window;
 
 		std::string windowName;
-		const int width;
-		const int height;
+		int width;
+		int height;
+		bool frameBufferResized = false;
+
+		static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
 
 		void init();
 	};

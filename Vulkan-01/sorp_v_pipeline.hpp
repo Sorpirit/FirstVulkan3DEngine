@@ -33,6 +33,7 @@ namespace sorp_v
 
 		SorpPipeline(const SorpPipeline&) = delete;
 		SorpPipeline& operator=(const SorpPipeline&) = delete;
+		SorpPipeline() = default;
 
 		static PipelineConfiguration defaultPipelineConfiguration(uint32_t width, uint32_t height);
 

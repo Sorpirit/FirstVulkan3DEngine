@@ -12,7 +12,7 @@ namespace sorp_v
 	{
 		loadModels();
 		createPipelineLayout();
-		createPipeline();
+		recreateSwapChain();
 		createCommandBuffers();
 	}
 
@@ -60,8 +60,8 @@ namespace sorp_v
 
 	void SorpSimpleApp::createPipeline()
 	{
-		auto pipelineConfig = SorpPipeline::defaultPipelineConfiguration(swapChain.width(), swapChain.height());
-		pipelineConfig.renderPass = swapChain.getRenderPass();
+		auto pipelineConfig = SorpPipeline::defaultPipelineConfiguration(swapChain->width(), swapChain->height());
+		pipelineConfig.renderPass = swapChain->getRenderPass();
 		pipelineConfig.pipelineLayout = pipelineLayout;
 		sorpPipeline = std::make_unique<SorpPipeline>(
 			renderDevice,
@@ -73,7 +73,7 @@ namespace sorp_v
 
 	void SorpSimpleApp::createCommandBuffers()
 	{
-		commandBuffers.resize(swapChain.imageCount());
+		commandBuffers.resize(swapChain->imageCount());
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -85,57 +85,87 @@ namespace sorp_v
 		{
 			throw std::runtime_error("failled to allocate command buffer");
 		}
-
-		for (int i = 0; i < commandBuffers.size(); i++)
-		{
-			VkCommandBufferBeginInfo beginInfo{};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-			if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) 
-			{
-				throw std::runtime_error("failled to begin recording command buffer: " + i);
-			}
-
-			VkRenderPassBeginInfo renderPassBegin{};
-			renderPassBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassBegin.renderPass = swapChain.getRenderPass();
-			renderPassBegin.framebuffer = swapChain.getFrameBuffer(i);
-
-			renderPassBegin.renderArea.offset = { 0, 0 };
-			renderPassBegin.renderArea.extent = swapChain.getSwapChainExtent();
-
-			std::array<VkClearValue, 2> clearColors{};
-			clearColors[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
-			clearColors[1].depthStencil = { 1.0f, 0 };
-			renderPassBegin.clearValueCount = static_cast<uint32_t>(clearColors.size());
-			renderPassBegin.pClearValues = clearColors.data();
-
-			vkCmdBeginRenderPass(commandBuffers[i], &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
-
-			sorpPipeline->bind(commandBuffers[i]);
-			sorpModel->bind(commandBuffers[i]);
-			sorpModel->draw(commandBuffers[i]);
-
-			vkCmdEndRenderPass(commandBuffers[i]);
-			if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-				throw std::runtime_error("failed to record command buffer");
-			}
-		}
 	}
 
 	void SorpSimpleApp::drawFrame()
 	{
 		uint32_t imageIndex;
-		auto result = swapChain.acquireNextImage(&imageIndex);
-	
+		auto result = swapChain->acquireNextImage(&imageIndex);
+
+		if(result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			recreateSwapChain();
+			return;
+		}
+
 		if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		{
 			throw std::runtime_error("failed to acquire swap chain image");
 		}
 
-		result = swapChain.submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+		recordCommandBuffer(imageIndex);
+		result = swapChain->submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+
+		if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || sorpWindow.wasWindowResized())
+		{
+			sorpWindow.resetWindowResizedFlag();
+			recreateSwapChain();
+			return;
+		}
+
 		if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to present swap chain image!");
+		}
+	}
+
+	void SorpSimpleApp::recreateSwapChain()
+	{
+		auto extent = sorpWindow.getExtent();
+		while (extent.width == 0 || extent.height == 0)
+		{
+			extent = sorpWindow.getExtent();
+			glfwWaitEvents();
+		}
+
+		vkDeviceWaitIdle(renderDevice.device());
+		swapChain.reset(nullptr);
+		swapChain = std::make_unique<SorpSwapChain>(renderDevice, extent);
+		createPipeline();
+	}
+
+	void SorpSimpleApp::recordCommandBuffer(int imageIndex)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failled to begin recording command buffer: " + imageIndex);
+		}
+
+		VkRenderPassBeginInfo renderPassBegin{};
+		renderPassBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBegin.renderPass = swapChain->getRenderPass();
+		renderPassBegin.framebuffer = swapChain->getFrameBuffer(imageIndex);
+
+		renderPassBegin.renderArea.offset = { 0, 0 };
+		renderPassBegin.renderArea.extent = swapChain->getSwapChainExtent();
+
+		std::array<VkClearValue, 2> clearColors{};
+		clearColors[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
+		clearColors[1].depthStencil = { 1.0f, 0 };
+		renderPassBegin.clearValueCount = static_cast<uint32_t>(clearColors.size());
+		renderPassBegin.pClearValues = clearColors.data();
+
+		vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
+
+		sorpPipeline->bind(commandBuffers[imageIndex]);
+		sorpModel->bind(commandBuffers[imageIndex]);
+		sorpModel->draw(commandBuffers[imageIndex]);
+
+		vkCmdEndRenderPass(commandBuffers[imageIndex]);
+		if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to record command buffer");
 		}
 	}
 }

@@ -30,7 +30,7 @@ namespace sorp_v {
 	private:
 		SorpWindow sorpWindow{ WIDTH, HEIGHT, "SorpSimpleApp" };
 		SorpRenderDevice renderDevice{ sorpWindow };
-		SorpSwapChain swapChain{ renderDevice, sorpWindow.getExtent() };
+		std::unique_ptr<SorpSwapChain> swapChain;
 		std::unique_ptr<SorpPipeline> sorpPipeline;
 		VkPipelineLayout pipelineLayout;
 		std::vector<VkCommandBuffer> commandBuffers;
@@ -41,5 +41,7 @@ namespace sorp_v {
 		void createPipeline();
 		void createCommandBuffers();
 		void drawFrame();
+		void recreateSwapChain();
+		void recordCommandBuffer(int imageIndex);
 	};
 }
