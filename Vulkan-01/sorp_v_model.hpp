@@ -23,7 +23,7 @@ namespace sorp_v
 			static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 		};
 
-		SorpModel(SorpRenderDevice &renderDevice, const std::vector<Vertex> &vertices);
+		SorpModel(SorpRenderDevice &renderDevice, const std::vector<Vertex> &vertices, const std::vector<uint16_t> &indexes);
 		~SorpModel();
 
 		SorpModel(const SorpModel&) = delete;
@@ -33,11 +33,16 @@ namespace sorp_v
 		void draw(VkCommandBuffer commandBuffer);
 	private:
 		void createVertexBuffers(const std::vector<Vertex> &vertices);
+		void createIndexBuffers(const std::vector<uint16_t> &indexes);
 
 		SorpRenderDevice &renderDevice;
+
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		uint32_t vertexCount;
 
+		VkBuffer indexBuffer;
+		VkDeviceMemory indexBufferMemory;
+		uint32_t indexCount;
 	};
 }

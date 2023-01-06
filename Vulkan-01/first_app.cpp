@@ -35,12 +35,17 @@ namespace sorp_v
 	void SorpSimpleApp::loadModels()
 	{
 		std::vector<SorpModel::Vertex> vertices = {
-			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+			{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+			{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+			{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+			{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 		};
 
-		sorpModel = std::make_unique<SorpModel>(renderDevice, vertices);
+		std::vector<uint16_t> indexes = {
+			0, 1, 2, 2, 3, 0
+		};
+
+		sorpModel = std::make_unique<SorpModel>(renderDevice, vertices, indexes);
 	}
 
 	void SorpSimpleApp::createPipelineLayout()
