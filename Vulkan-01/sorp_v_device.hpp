@@ -34,7 +34,7 @@ namespace sorp_v {
 
         // Not copyable or movable
         SorpRenderDevice(const SorpRenderDevice&) = delete;
-        void operator=(const SorpRenderDevice&) = delete;
+        SorpRenderDevice& operator=(const SorpRenderDevice&) = delete;
         SorpRenderDevice(SorpRenderDevice&&) = delete;
         SorpRenderDevice& operator=(SorpRenderDevice&&) = delete;
 

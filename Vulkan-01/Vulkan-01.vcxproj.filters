@@ -33,6 +33,9 @@
     <ClCompile Include="sorp_v_swap_chain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sorp_v_model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sorp_v_window.hpp">
@@ -50,7 +53,7 @@
     <ClInclude Include="sorp_v_swap_chain.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sorp_v_vertex.hpp">
+    <ClInclude Include="sorp_v_model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

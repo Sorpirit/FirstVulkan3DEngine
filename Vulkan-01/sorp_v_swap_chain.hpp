@@ -19,7 +19,7 @@ namespace sorp_v {
         ~SorpSwapChain();
 
         SorpSwapChain(const SorpSwapChain&) = delete;
-        void operator=(const SorpSwapChain&) = delete;
+        SorpSwapChain& operator=(const SorpSwapChain&) = delete;
 
         VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
         VkRenderPass getRenderPass() { return renderPass; }

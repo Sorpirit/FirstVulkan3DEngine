@@ -4,7 +4,7 @@
 #include "sorp_v_pipeline.hpp"
 #include "sorp_v_device.hpp"
 #include "sorp_v_swap_chain.hpp"
-#include "sorp_v_vertex.hpp"
+#include "sorp_v_model.hpp"
 
 #include <memory>
 #include <vector>
@@ -19,17 +19,6 @@ namespace sorp_v {
 		static const std::string VERTEX_SHADER;
 		static const std::string FRAGMENT_SHADER;
 
-		const std::vector<vertex> vertices = {
-			{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-			{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-		};
-
-		const std::vector<uint16_t> indices = {
-			0, 1, 2, 2, 3, 0
-		};
-
 		SorpSimpleApp();
 		~SorpSimpleApp();
 
@@ -41,21 +30,18 @@ namespace sorp_v {
 	private:
 		SorpWindow sorpWindow{ WIDTH, HEIGHT, "SorpSimpleApp" };
 		SorpRenderDevice renderDevice{ sorpWindow };
-		SorpSwapChain swapChain{ renderDevice, sorpWindow.getExtent() };
+		std::unique_ptr<SorpSwapChain> swapChain;
 		std::unique_ptr<SorpPipeline> sorpPipeline;
 		VkPipelineLayout pipelineLayout;
 		std::vector<VkCommandBuffer> commandBuffers;
+		std::unique_ptr<SorpModel> sorpModel;
 
-		VkBuffer vertexBuffer;
-		VkDeviceMemory vertexBufferMemory;
-		VkBuffer indexBuffer;
-		VkDeviceMemory indexBufferMemory;
-
+		void loadModels();
 		void createPipelineLayout();
 		void createPipeline();
-		void createIndexBuffer();
-		void createVertexBuffer();
-		void createCommanBuffers();
+		void createCommandBuffers();
 		void drawFrame();
+		void recreateSwapChain();
+		void recordCommandBuffer(int imageIndex);
 	};
 }

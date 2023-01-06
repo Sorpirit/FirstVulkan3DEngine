@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sorp_v_device.hpp"
-#include "sorp_v_vertex.hpp"
 
 #include <string>
 #include <vector>
@@ -34,6 +33,7 @@ namespace sorp_v
 
 		SorpPipeline(const SorpPipeline&) = delete;
 		SorpPipeline& operator=(const SorpPipeline&) = delete;
+		SorpPipeline() = default;
 
 		static PipelineConfiguration defaultPipelineConfiguration(uint32_t width, uint32_t height);
 
