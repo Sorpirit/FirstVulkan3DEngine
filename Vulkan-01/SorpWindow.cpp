@@ -1,4 +1,4 @@
-#include "sorp_v_window.hpp"
+#include "SorpWindow.hpp"
 
 #include <stdexcept>
 

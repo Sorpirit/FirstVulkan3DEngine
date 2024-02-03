@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sorp_v_window.hpp"
+#include "SorpWindow.hpp"
 
 #include <string>
 #include <vector>
@@ -38,15 +38,15 @@ namespace sorp_v {
         SorpRenderDevice(SorpRenderDevice&&) = delete;
         SorpRenderDevice& operator=(SorpRenderDevice&&) = delete;
 
-        VkCommandPool getCommandPool() { return commandPool; }
-        VkDevice device() { return device_; }
-        VkSurfaceKHR surface() { return surface_; }
-        VkQueue graphicsQueue() { return graphicsQueue_; }
-        VkQueue presentQueue() { return presentQueue_; }
+        VkCommandPool getCommandPool() { return _commandPool; }
+        VkDevice device() { return _device; }
+        VkSurfaceKHR surface() { return _surface; }
+        VkQueue graphicsQueue() { return _graphicsQueue; }
+        VkQueue presentQueue() { return _presentQueue; }
 
-        SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
+        SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(_physicalDevice); }
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-        QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
+        QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(_physicalDevice); }
         VkFormat findSupportedFormat(
             const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
@@ -68,6 +68,7 @@ namespace sorp_v {
             VkMemoryPropertyFlags properties,
             VkImage& image,
             VkDeviceMemory& imageMemory);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         VkPhysicalDeviceProperties properties;
 
@@ -89,19 +90,19 @@ namespace sorp_v {
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
-        VkInstance instance;
-        VkDebugUtilsMessengerEXT debugMessenger;
-        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-        SorpWindow& window;
-        VkCommandPool commandPool;
+        VkInstance _instance;
+        VkDebugUtilsMessengerEXT _debugMessenger;
+        VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
+        SorpWindow& _window;
+        VkCommandPool _commandPool;
 
-        VkDevice device_;
-        VkSurfaceKHR surface_;
-        VkQueue graphicsQueue_;
-        VkQueue presentQueue_;
+        VkDevice _device;
+        VkSurfaceKHR _surface;
+        VkQueue _graphicsQueue;
+        VkQueue _presentQueue;
 
-        const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-        const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        const std::vector<const char*> _validationLayers = { "VK_LAYER_KHRONOS_validation" };
+        const std::vector<const char*> _deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     };
 
 }

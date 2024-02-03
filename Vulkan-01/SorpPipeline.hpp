@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sorp_v_device.hpp"
+#include "SorpRenderDevice.hpp"
 
 #include <string>
 #include <vector>
@@ -40,10 +40,10 @@ namespace sorp_v
 		void bind(VkCommandBuffer command);
 
 	private:
-		SorpRenderDevice& renderDevice;
-		VkPipeline graphicsPipeline;
-		VkShaderModule vertShaderModel;
-		VkShaderModule fragShaderModel;
+		SorpRenderDevice& _renderDevice;
+		VkPipeline _graphicsPipeline;
+		VkShaderModule _vertShaderModel;
+		VkShaderModule _fragShaderModel;
 
 		static std::vector<char> readFile(const std::string& filePath);
 

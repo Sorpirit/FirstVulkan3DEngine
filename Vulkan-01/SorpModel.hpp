@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sorp_v_device.hpp"
+#include "SorpRenderDevice.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -16,8 +16,9 @@ namespace sorp_v
 	public:
 		struct Vertex
 		{
-			glm::vec2 position;
+			glm::vec3 position;
 			glm::vec3 color;
+			glm::vec2 texCoord;
 
 			static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
 			static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
@@ -35,14 +36,14 @@ namespace sorp_v
 		void createVertexBuffers(const std::vector<Vertex> &vertices);
 		void createIndexBuffers(const std::vector<uint16_t> &indexes);
 
-		SorpRenderDevice &renderDevice;
+		SorpRenderDevice& _renderDevice;
 
-		VkBuffer vertexBuffer;
-		VkDeviceMemory vertexBufferMemory;
-		uint32_t vertexCount;
+		VkBuffer _vertexBuffer;
+		VkDeviceMemory _vertexBufferMemory;
+		uint32_t _vertexCount;
 
-		VkBuffer indexBuffer;
-		VkDeviceMemory indexBufferMemory;
-		uint32_t indexCount;
+		VkBuffer _indexBuffer;
+		VkDeviceMemory _indexBufferMemory;
+		uint32_t _indexCount;
 	};
 }

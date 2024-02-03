@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "first_app.hpp"
+#include "SorpSimpleApp.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -16,7 +16,6 @@
 
 int main() 
 {
-
     sorp_v::SorpSimpleApp app{};
 
     try 

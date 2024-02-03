@@ -1,6 +1,6 @@
-#include "sorp_v_pipeline.hpp"
+#include "SorpPipeline.hpp"
 
-#include "sorp_v_model.hpp"
+#include "SorpModel.hpp"
 
 #include <fstream>
 #include <stdexcept>
@@ -12,15 +12,15 @@ namespace sorp_v {
 		SorpRenderDevice& renderDevice,
 		const std::string vertShader,
 		const std::string fragShader,
-		const PipelineConfiguration& config) : renderDevice{renderDevice}
+		const PipelineConfiguration& config) : _renderDevice{renderDevice}
 	{
 		createGraphicsPipeline(vertShader, fragShader, config);
 	}
 	
 	SorpPipeline::~SorpPipeline() {
-		vkDestroyShaderModule(renderDevice.device(), vertShaderModel, nullptr);
-		vkDestroyShaderModule(renderDevice.device(), fragShaderModel, nullptr);
-		vkDestroyPipeline(renderDevice.device(), graphicsPipeline, nullptr);
+		vkDestroyShaderModule(_renderDevice.device(), _vertShaderModel, nullptr);
+		vkDestroyShaderModule(_renderDevice.device(), _fragShaderModel, nullptr);
+		vkDestroyPipeline(_renderDevice.device(), _graphicsPipeline, nullptr);
 	}
 
 	PipelineConfiguration SorpPipeline::defaultPipelineConfiguration(uint32_t width, uint32_t height)
@@ -98,7 +98,7 @@ namespace sorp_v {
 
 	void SorpPipeline::bind(VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 	}
 
 	std::vector<char> SorpPipeline::readFile(const std::string& filePath)
@@ -128,14 +128,14 @@ namespace sorp_v {
 		auto vertCode = readFile(vertShader);
 		auto fragCode = readFile(fragShader);
 
-		createShaderModule(vertCode, &vertShaderModel);
-		createShaderModule(fragCode, &fragShaderModel);
+		createShaderModule(vertCode, &_vertShaderModel);
+		createShaderModule(fragCode, &_fragShaderModel);
 
 		VkPipelineShaderStageCreateInfo shadersStages[2];
 
 		shadersStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shadersStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-		shadersStages[0].module = vertShaderModel;
+		shadersStages[0].module = _vertShaderModel;
 		shadersStages[0].pName = "main";
 		shadersStages[0].flags = 0;
 		shadersStages[0].pNext = nullptr;
@@ -143,7 +143,7 @@ namespace sorp_v {
 
 		shadersStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shadersStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		shadersStages[1].module = fragShaderModel;
+		shadersStages[1].module = _fragShaderModel;
 		shadersStages[1].pName = "main";
 		shadersStages[1].flags = 0;
 		shadersStages[1].pNext = nullptr;
@@ -186,7 +186,7 @@ namespace sorp_v {
 		pipelineInfo.basePipelineIndex = -1;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(renderDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(_renderDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_graphicsPipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create graphics pipeline!");
 		}
@@ -199,7 +199,7 @@ namespace sorp_v {
 		createInfo.codeSize = code.size();
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-		if (vkCreateShaderModule(renderDevice.device(), &createInfo, nullptr, shaderModel) != VK_SUCCESS)
+		if (vkCreateShaderModule(_renderDevice.device(), &createInfo, nullptr, shaderModel) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create shader model");
 		}
